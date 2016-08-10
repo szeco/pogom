@@ -40,7 +40,17 @@ document.getElementById('pokemon-checkbox').checked = getFromStorage("displayPok
 document.getElementById('gyms-checkbox').checked = getFromStorage("displayGyms", "true");
 document.getElementById('coverage-checkbox').checked = getFromStorage("displayCoverage", "true");
 
- 
+// Load pokemon names and populate lists
+var idToPokemon = {};
+$.getJSON("static/locales/pokemon.en.json").done(function(data) {
+    var pokeList = [];
+    idToPokemon = data;
+
+    $.each(data, function(key, value) {
+        pokeList.push( { id: key, text: value } );
+    });
+});
+
 $.getJSON("static/locales/pokemon.en.json").done(function(data) {
     var pokeList = [];
 
@@ -410,6 +420,41 @@ function updateMap() {
                 if (item.marker) item.marker.setMap(null);
                 item.marker = setupPokemonMarker(item);
                 map_pokemons[item.encounter_id] = item;
+            }
+        });
+
+        // show lured pokemons
+        $.each(result.pokestops, function(i, item){
+            if (item.active_pokemon_id == null) {
+                return;
+            }
+            // create fake encounter_id for lured pokemon stored in db
+            var fake_encounter_id = item.pokestop_id.toString() +'-'+ item.lure_expiration.toString();
+
+            var item2 = {
+                pokestop_id: item.pokestop_id,
+                lure_expiration: item.lure_expiration,
+
+                pokemon_id: item.active_pokemon_id,
+                pokemon_name: 'lured'+idToPokemon[item.active_pokemon_id],
+                latitude: item.latitude,
+                longitude: item.longitude,
+                disappear_time: item.lure_expiration,
+
+                encounter_id: window.btoa(fake_encounter_id),
+                spawnpoint_id: item.pokestop_id
+            };
+
+            if (!document.getElementById('pokestops-checkbox').checked) {
+                return false; // in case the checkbox was unchecked in the meantime.
+            }
+
+            if (!(item2.encounter_id in map_pokemons) &&
+                    excludedPokemon.indexOf(item2.pokemon_id) < 0) {
+                // add marker to map and item to dict
+                if (item2.marker) item2.marker.setMap(null);
+                item2.marker = setupPokemonMarker(item2);
+                map_pokemons[item2.encounter_id] = item2;
             }
         });
 
