@@ -402,6 +402,7 @@ function updateMap() {
         url: "map-data",
         type: 'GET',
         data: {'pokemon': localStorage.displayPokemons,
+                'pokestops': document.getElementById('pokestops-checkbox').checked,
                'gyms': localStorage.displayGyms},
         dataType: "json"
     }).done(function(result) {
